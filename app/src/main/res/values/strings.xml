@@ -2,4 +2,12 @@
     <string name="app_name">Bitly App</string>
     <string name="edit_message">Enter a message</string>
     <string name="button_send">Send</string>
+    <string name="button_makelink">Shorten</string>
+    <string name="long_link">Long URL</string>
+    <string name="link_title">Title</string>
+    <string name="link_note">Link Note</string>
+    <string name="result"> Shorter Link</string>
+    <string name="button_copy">copy</string>
+    <string name="button_share"> share</string>
+
 </resources>

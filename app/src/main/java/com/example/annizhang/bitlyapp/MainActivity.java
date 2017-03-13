@@ -5,6 +5,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TabHost;
 import android.widget.TextView;
 
 import com.android.volley.Request;
@@ -22,12 +23,14 @@ import android.util.Base64;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String EXTRA_MESSAGE = "com.example.myfirstapp.MESSAGE";
+    public static final String ACCESSCODE = "com.example.myfirstapp.MESSAGE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
     }
 
     /** called when send button is pressed */
@@ -36,11 +39,13 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, DisplayMessageActivity.class);
         EditText editText = (EditText) findViewById(R.id.editText1);
         String message = editText.getText().toString();
-        intent.putExtra(EXTRA_MESSAGE, message);
+        intent.putExtra(ACCESSCODE, message);
         startActivity(intent);
     }
 
     public void login(View view) {
+        final Intent intent = new Intent(this, CreateLink.class);
+
         final EditText name = (EditText)findViewById(R.id.editText1);
         final EditText pass = (EditText)findViewById(R.id.editText2);
         final String username = name.getText().toString();
@@ -57,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
                         // Display the first 500 characters of the response string.
                         mTextView.setText("Response is: " + response);
                         String accessCode = response;
+                        intent.putExtra(ACCESSCODE, accessCode);
+                        startActivity(intent);
                     }
                 }, new Response.ErrorListener() {
                     @Override

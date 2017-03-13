@@ -27,7 +27,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
-        <activity android:name=".CreateLInk"></activity>
+        <activity android:name=".CreateLink"></activity>
     </application>
 
 </manifest>
