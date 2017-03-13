@@ -5,7 +5,9 @@ Android App using bitly api to create links, display links, and to view aggregat
 ![alt tag](sampleImages/myStats.png)
 
 Sign in to test account using
+
 username: anniblue
+
 password: blueparakeet
 
 Android SDK 25
