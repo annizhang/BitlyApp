@@ -23,12 +23,13 @@ import android.util.Base64;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String ACCESSCODE = "com.example.myfirstapp.MESSAGE";
+    public static String ACCESSCODE = "com.example.myfirstapp.MESSAGE";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        ACCESSCODE = "";
 
 
     }
@@ -40,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
         final EditText pass = (EditText)findViewById(R.id.editText2);
         final String username = name.getText().toString();
         final String password = pass.getText().toString();
-//        final TextView mTextView = (TextView) findViewById(R.id.textView2);
+        final TextView mTextView = (TextView) findViewById(R.id.textView2);
+        mTextView.setVisibility(View.INVISIBLE);
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://api-ssl.bitly.com/oauth/access_token";
 
@@ -51,14 +53,20 @@ public class MainActivity extends AppCompatActivity {
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
 //                        mTextView.setText("Response is: " + response);
-                        String accessCode = response;
-                        intent.putExtra(ACCESSCODE, accessCode);
-                        startActivity(intent);
+                        if (response.substring(0,1).equals("{")){
+                            mTextView.setVisibility(View.VISIBLE);
+                            mTextView.setText("That didn't work! Try again.");
+                        } else {
+                            mTextView.setVisibility(View.INVISIBLE);
+                            String accessCode = response;
+                            intent.putExtra(ACCESSCODE, accessCode);
+                            startActivity(intent);
+                        }
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error){
-//                        mTextView.setText("That didn't work!");
+                        mTextView.setText("That didn't work! Try again.");
                     }
                 }){
                     protected Map<String, String> getParams() throws com.android.volley.AuthFailureError {

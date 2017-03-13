@@ -32,6 +32,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -70,15 +72,7 @@ public class CreateLink extends AppCompatActivity {
                                 getLinks();
                             }
                             else if(tabId.equals("myStats")) {
-                                GraphView graph = (GraphView) findViewById(R.id.graph);
-                                LineGraphSeries<DataPoint> series = new LineGraphSeries<>(new DataPoint[] {
-                                        new DataPoint(0, 1),
-                                        new DataPoint(1, 5),
-                                        new DataPoint(2, 3),
-                                        new DataPoint(3, 2),
-                                        new DataPoint(4, 6)
-                                });
-                                graph.addSeries(series);
+                                getStats();
                             }
                         }
                 });
@@ -130,8 +124,8 @@ public class CreateLink extends AppCompatActivity {
         //call the bitly edit link endpoint to create a shorter bitly link
         EditText editLink = (EditText) findViewById(R.id.editLink);
 
-        //remember to do url encoding on this
         String longLink = editLink.getText().toString();
+
 
         EditText linkTitle = (EditText) findViewById(R.id.linkTitle);
         String title = linkTitle.getText().toString();
@@ -140,9 +134,8 @@ public class CreateLink extends AppCompatActivity {
         final TextView mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + ACCESSCODE + "&longUrl=" + longLink +
-                "&title=" + title + "&note="+note;
-        //final TextView shorterUrl = (TextView) findViewById(R.id.resultLink);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
+                "&note" + note;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -197,11 +190,53 @@ public class CreateLink extends AppCompatActivity {
                     }
 
                 }, new Response.ErrorListener() {
-                        @Override
-                        public void onErrorResponse(VolleyError error) {
+            @Override
+            public void onErrorResponse(VolleyError error) {
 
+            }
+        });
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
+
+    }
+
+    public void getStats() {
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + ACCESSCODE;
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        try {
+                            JSONObject newUrl;
+                            newUrl = new JSONObject(response);
+                            int days = newUrl.getJSONObject("data").getInt("days");
+                            JSONArray clicks = newUrl.getJSONObject("data").getJSONArray("clicks");
+                            DataPoint[] clickData = new DataPoint[days];
+                            GraphView graph = (GraphView) findViewById(R.id.graph);
+                            for (int i = 0; i < days; i++) {
+                                try{
+                                    clickData[i] = new DataPoint(i, clicks.getJSONObject(days-1-i).getInt("clicks"));
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            LineGraphSeries<DataPoint> series = new LineGraphSeries<>(clickData);
+                            graph.addSeries(series);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                });
+                    }
+
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
@@ -233,8 +268,8 @@ public class CreateLink extends AppCompatActivity {
             TextView shortLink = (TextView) view.findViewById(R.id.shortLink);
             shortLink.setText("short: " + currentLink.link);
             String oldLink = currentLink.long_url;
-            if (oldLink.length() > 20){
-                oldLink = oldLink.substring(0, 19);
+            if (oldLink.length() > 35){
+                oldLink = oldLink.substring(0, 34) + "...";
             }
             TextView longLink = (TextView) view.findViewById(R.id.longLink);
             longLink.setText("long: " + oldLink);
