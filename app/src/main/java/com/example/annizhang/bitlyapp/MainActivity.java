@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         final EditText pass = (EditText)findViewById(R.id.editText2);
         final String username = name.getText().toString();
         final String password = pass.getText().toString();
-        final TextView mTextView = (TextView) findViewById(R.id.textView2);
+//        final TextView mTextView = (TextView) findViewById(R.id.textView2);
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://api-ssl.bitly.com/oauth/access_token";
 
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
-                        mTextView.setText("Response is: " + response);
+//                        mTextView.setText("Response is: " + response);
                         String accessCode = response;
                         intent.putExtra(ACCESSCODE, accessCode);
                         startActivity(intent);
@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error){
-                        mTextView.setText("That didn't work!");
+//                        mTextView.setText("That didn't work!");
                     }
                 }){
                     protected Map<String, String> getParams() throws com.android.volley.AuthFailureError {
@@ -96,4 +96,5 @@ public class MainActivity extends AppCompatActivity {
 // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
+
 }

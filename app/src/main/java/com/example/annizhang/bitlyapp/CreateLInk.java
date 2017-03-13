@@ -8,10 +8,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TabHost;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -20,6 +22,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
@@ -42,6 +45,19 @@ public class CreateLink extends AppCompatActivity {
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
 
         TabHost thisTab = (TabHost) findViewById(R.id.tabhost);
+        thisTab.setOnTabChangedListener(
+                new TabHost.OnTabChangeListener(){
+                        @Override
+                        public void onTabChanged(String tabId) {
+                            if(tabId.equals("create")) {
+                                //in create tab
+                            }
+                            if(tabId.equals("mylinks")) {
+                                //call bitly link history api
+                                View linksView = findViewById(R.id.my_links);
+                                getLinks(linksView);
+                            }
+                        }});
 
         thisTab.setup();
 
@@ -54,6 +70,8 @@ public class CreateLink extends AppCompatActivity {
         myLinksTab.setContent(R.id.my_links);
         myLinksTab.setIndicator("My Links");
         thisTab.addTab(myLinksTab);
+
+
 
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
@@ -69,6 +87,8 @@ public class CreateLink extends AppCompatActivity {
                 ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("new link", shortLink.getText());
                 clipboard.setPrimaryClip(clip);
+                //show copied to clipboard message
+                Toast.makeText(getApplicationContext(), "link copied to clipboard!",Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -118,8 +138,40 @@ public class CreateLink extends AppCompatActivity {
         queue.add(stringRequest);
     }
 
-    public void copyLink(View view){
-        //use this to copy link to clipboard
+    public void getLinks(View view){
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
+        final TextView mTextView = (TextView)findViewById(R.id.link_holder);
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        // Display the first 500 characters of the response string.
+                        JSONObject newUrl;
+                        try {
+                            newUrl = new JSONObject(response);
+                            JSONArray oldlinks = newUrl.getJSONObject("data").getJSONArray("link_history");
+                            JSONObject firstLink = oldlinks.getJSONObject(0);
+                            mTextView.setText(firstLink.getString("title"));
+                            Button copyButton = (Button) findViewById(R.id.button_copy);
+                            copyButton.setVisibility(View.VISIBLE);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                mTextView.setText("That didn't work!");
+            }
+        });
+        // Add the request to the RequestQueue.
+        queue.add(stringRequest);
+
+
     }
+
 
 }
