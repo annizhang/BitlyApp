@@ -9,5 +9,7 @@
     <string name="result"> Shorter Link</string>
     <string name="button_copy">copy</string>
     <string name="button_share"> share</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
 
 </resources>

@@ -9,8 +9,10 @@ import android.os.Bundle;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,13 +29,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.example.annizhang.bitlyapp.R.id.parent;
 
 
 public class CreateLink extends AppCompatActivity {
 
     public static String ACCESSCODE = "user access code after log in";
+    public static final String allLinks = "all the links from link_history";
+    public ArrayList<MyLink> linkHistory = new ArrayList<MyLink>();
+    //public Intent linksIntent;
+    ListView linksList = (ListView) findViewById(R.id.listView);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +64,7 @@ public class CreateLink extends AppCompatActivity {
                             if(tabId.equals("mylinks")) {
                                 //call bitly link history api
                                 View linksView = findViewById(R.id.my_links);
-                                getLinks(linksView);
+                                getLinks();
                             }
                         }});
 
@@ -67,11 +76,10 @@ public class CreateLink extends AppCompatActivity {
         thisTab.addTab(createTab);
 
         TabHost.TabSpec myLinksTab = thisTab.newTabSpec("mylinks");
+//        linksIntent = new Intent(this, ViewLinks.class);
         myLinksTab.setContent(R.id.my_links);
         myLinksTab.setIndicator("My Links");
         thisTab.addTab(myLinksTab);
-
-
 
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
@@ -138,7 +146,9 @@ public class CreateLink extends AppCompatActivity {
         queue.add(stringRequest);
     }
 
-    public void getLinks(View view){
+    public void getLinks() {
+
+        //final Intent linksIntent = new Intent(this, ViewLinks.class);
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
         final TextView mTextView = (TextView)findViewById(R.id.link_holder);
@@ -149,17 +159,13 @@ public class CreateLink extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
-                        JSONObject newUrl;
-                        try {
-                            newUrl = new JSONObject(response);
-                            JSONArray oldlinks = newUrl.getJSONObject("data").getJSONArray("link_history");
-                            JSONObject firstLink = oldlinks.getJSONObject(0);
-                            mTextView.setText(firstLink.getString("title"));
-                            Button copyButton = (Button) findViewById(R.id.button_copy);
-                            copyButton.setVisibility(View.VISIBLE);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                        //JSONObject newUrl;
+//                        linksIntent.putExtra(allLinks, response);
+//                        startActivity(linksIntent);
+//                            newUrl = new JSONObject(response);
+//                            JSONArray oldlinks = newUrl.getJSONObject("data").getJSONArray("link_history");
+//                            JSONObject firstLink = oldlinks.getJSONObject(0);
+//                            mTextView.setText(firstLink.getString("title"));
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -172,6 +178,28 @@ public class CreateLink extends AppCompatActivity {
 
 
     }
+
+    private class MyLinkListAdapter extends ArrayAdapter<MyLink> {
+        public MyLinkListAdapter() {
+            super(CreateLink.this, R.layout.link_list_view, linkHistory);
+        }
+
+        @Override
+        public View getView(int position, View view, ViewGroup parent) {
+            if (view == null) {
+                view = getLayoutInflater().inflate(R.layout.link_list_view, parent, false);
+            }
+            MyLink currentLink = linkHistory.get(position);
+            TextView title = (TextView) view.findViewById(R.id.linkTitle);
+            title.setText(currentLink.title);
+            TextView shortLink = (TextView) view.findViewById(R.id.shortLink);
+            title.setText(currentLink.long_url);
+            TextView longLink = (TextView) view.findViewById(R.id.longLink);
+            title.setText(currentLink.link);
+            return view;
+        }
+    }
+
 
 
 }

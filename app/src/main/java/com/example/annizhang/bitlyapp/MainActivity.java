@@ -33,16 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    /** called when send button is pressed */
-    public void sendMessage(View view) {
-        //do something when button is pressed
-        Intent intent = new Intent(this, DisplayMessageActivity.class);
-        EditText editText = (EditText) findViewById(R.id.editText1);
-        String message = editText.getText().toString();
-        intent.putExtra(ACCESSCODE, message);
-        startActivity(intent);
-    }
-
     public void login(View view) {
         final Intent intent = new Intent(this, CreateLink.class);
 

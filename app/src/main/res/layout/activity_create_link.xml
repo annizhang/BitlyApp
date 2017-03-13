@@ -46,6 +46,12 @@
                         android:ems="10"
                         android:inputType="textPersonName"
                         android:text="Name" />
+
+                    <ListView
+                        android:id="@+id/listView"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:drawSelectorOnTop="false" />
                 </LinearLayout>
 
                 <LinearLayout
