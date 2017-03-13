@@ -1,6 +1,6 @@
 Android App using bitly api to create links, display links, and to view aggregate clicks over the last week.
 
-![alt tag](sampleImages/createLink.png)
+![alt tag](sampleImages/createLink.png =200px)
 
 Sign in to test account using
 username: anniblue
