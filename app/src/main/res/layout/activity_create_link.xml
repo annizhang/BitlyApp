@@ -11,7 +11,7 @@
         android:layout_width="0dp"
         android:layout_height="589dp"
         android:layout_marginLeft="16dp"
-        android:layout_marginRight="32dp"
+        android:layout_marginRight="16dp"
         android:layout_marginTop="7dp"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -39,19 +39,31 @@
                     android:layout_height="match_parent"
                     android:orientation="vertical">
 
-                    <EditText
-                        android:id="@+id/link_holder"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ems="10"
-                        android:inputType="textPersonName"
-                        android:text="Name" />
-
                     <ListView
                         android:id="@+id/listView"
                         android:layout_width="fill_parent"
-                        android:layout_height="fill_parent"
-                        android:drawSelectorOnTop="false" />
+                        android:layout_height="match_parent"
+                        android:layout_marginBottom="16dp"
+                        android:drawSelectorOnTop="false"
+                        android:paddingBottom="10dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/my_Stats"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical">
+
+                    <com.jjoe64.graphview.GraphView
+                        android:id="@+id/graph"
+                        android:layout_width="match_parent"
+                        android:drawSelectorOnTop="false"
+                        android:layout_height="200dip" />
+                    <!--<TextView-->
+                        <!--android:id="@+id/statsText"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="wrap_content"-->
+                        <!--android:text="nyc 2017" />-->
                 </LinearLayout>
 
                 <LinearLayout

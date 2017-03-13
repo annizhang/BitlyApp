@@ -23,6 +23,9 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,9 +43,9 @@ public class CreateLink extends AppCompatActivity {
 
     public static String ACCESSCODE = "user access code after log in";
     public static final String allLinks = "all the links from link_history";
-    public ArrayList<MyLink> linkHistory = new ArrayList<MyLink>();
+    public ArrayList<MyLink> linkHistory;
     //public Intent linksIntent;
-    ListView linksList = (ListView) findViewById(R.id.listView);
+    ListView linksList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +55,7 @@ public class CreateLink extends AppCompatActivity {
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
+        linksList = (ListView) findViewById(R.id.listView);
 
         TabHost thisTab = (TabHost) findViewById(R.id.tabhost);
         thisTab.setOnTabChangedListener(
@@ -61,14 +65,27 @@ public class CreateLink extends AppCompatActivity {
                             if(tabId.equals("create")) {
                                 //in create tab
                             }
-                            if(tabId.equals("mylinks")) {
+                            else if(tabId.equals("mylinks")) {
                                 //call bitly link history api
-                                View linksView = findViewById(R.id.my_links);
                                 getLinks();
                             }
-                        }});
+                            else if(tabId.equals("myStats")) {
+                                GraphView graph = (GraphView) findViewById(R.id.graph);
+                                LineGraphSeries<DataPoint> series = new LineGraphSeries<>(new DataPoint[] {
+                                        new DataPoint(0, 1),
+                                        new DataPoint(1, 5),
+                                        new DataPoint(2, 3),
+                                        new DataPoint(3, 2),
+                                        new DataPoint(4, 6)
+                                });
+                                graph.addSeries(series);
+                            }
+                        }
+                });
 
         thisTab.setup();
+
+
 
         TabHost.TabSpec createTab = thisTab.newTabSpec("create");
         createTab.setContent(R.id.create_link);
@@ -76,10 +93,17 @@ public class CreateLink extends AppCompatActivity {
         thisTab.addTab(createTab);
 
         TabHost.TabSpec myLinksTab = thisTab.newTabSpec("mylinks");
-//        linksIntent = new Intent(this, ViewLinks.class);
         myLinksTab.setContent(R.id.my_links);
         myLinksTab.setIndicator("My Links");
         thisTab.addTab(myLinksTab);
+
+        TabHost.TabSpec statsTab = thisTab.newTabSpec("myStats");
+        statsTab.setContent(R.id.my_Stats);
+        statsTab.setIndicator("My Stats");
+        thisTab.addTab(statsTab);
+
+
+
 
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
@@ -147,11 +171,8 @@ public class CreateLink extends AppCompatActivity {
     }
 
     public void getLinks() {
-
-        //final Intent linksIntent = new Intent(this, ViewLinks.class);
         RequestQueue queue = Volley.newRequestQueue(this);
         String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
-        final TextView mTextView = (TextView)findViewById(R.id.link_holder);
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -159,25 +180,38 @@ public class CreateLink extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         // Display the first 500 characters of the response string.
-                        //JSONObject newUrl;
-//                        linksIntent.putExtra(allLinks, response);
-//                        startActivity(linksIntent);
-//                            newUrl = new JSONObject(response);
-//                            JSONArray oldlinks = newUrl.getJSONObject("data").getJSONArray("link_history");
-//                            JSONObject firstLink = oldlinks.getJSONObject(0);
-//                            mTextView.setText(firstLink.getString("title"));
+                        try {
+                            linkHistory = new ArrayList<MyLink>();
+                            JSONObject newUrl;
+                            newUrl = new JSONObject(response);
+                            JSONArray oldlinks = newUrl.getJSONObject("data").getJSONArray("link_history");
+                            for (int i = 0; i < oldlinks.length(); i++) {
+
+                                MyLink eachHist = new MyLink(oldlinks.getJSONObject(i));
+                                linkHistory.add(eachHist);
+                                addToListView();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
+
                 }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                mTextView.setText("That didn't work!");
-            }
-        });
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+
+                        }
+                });
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
 
-
     }
+
+    private void addToListView(){
+        ArrayAdapter<MyLink> adapter = new MyLinkListAdapter();
+        linksList.setAdapter(adapter);
+    }
+
 
     private class MyLinkListAdapter extends ArrayAdapter<MyLink> {
         public MyLinkListAdapter() {
@@ -190,12 +224,20 @@ public class CreateLink extends AppCompatActivity {
                 view = getLayoutInflater().inflate(R.layout.link_list_view, parent, false);
             }
             MyLink currentLink = linkHistory.get(position);
+            String longTitle = currentLink.title;
             TextView title = (TextView) view.findViewById(R.id.linkTitle);
-            title.setText(currentLink.title);
+            if (longTitle.length() > 20){
+                longTitle = longTitle.substring(0,19) + "...";
+            }
+            title.setText(longTitle);
             TextView shortLink = (TextView) view.findViewById(R.id.shortLink);
-            title.setText(currentLink.long_url);
+            shortLink.setText("short: " + currentLink.link);
+            String oldLink = currentLink.long_url;
+            if (oldLink.length() > 20){
+                oldLink = oldLink.substring(0, 19);
+            }
             TextView longLink = (TextView) view.findViewById(R.id.longLink);
-            title.setText(currentLink.link);
+            longLink.setText("long: " + oldLink);
             return view;
         }
     }
