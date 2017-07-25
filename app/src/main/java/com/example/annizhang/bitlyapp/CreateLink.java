@@ -32,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ import java.util.Map;
 import static com.example.annizhang.bitlyapp.R.id.parent;
 
 
-public class CreateLink extends AppCompatActivity {
+public class CreateLink extends AppCompatActivity{
 
     public static String ACCESSCODE = "user access code after log in";
     public static final String allLinks = "all the links from link_history";
@@ -50,7 +51,7 @@ public class CreateLink extends AppCompatActivity {
     ListView linksList;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_link);
 
@@ -106,18 +107,13 @@ public class CreateLink extends AppCompatActivity {
             }
         });
 
-        Button copyButton = (Button) findViewById(R.id.button_copy);
-        copyButton.setOnClickListener(new Button.OnClickListener() {
+        Button scanLinkButton = (Button) findViewById(R.id.getFromImage);
+        final Intent cameraIntent = new Intent(this, ScanLink.class);
+        scanLinkButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                final TextView shortLink = (TextView) findViewById(R.id.resultLink);
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("new link", shortLink.getText());
-                clipboard.setPrimaryClip(clip);
-                //show copied to clipboard message
-                Toast.makeText(getApplicationContext(), "link copied to clipboard!",Toast.LENGTH_SHORT).show();
+            startActivity(cameraIntent);
             }
         });
-
     }
 
     public void shortenLink(View view){
