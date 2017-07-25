@@ -8,13 +8,17 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.net.wifi.WifiConfiguration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.SyncStateContract;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
 import android.util.Log;
+import android.util.StringBuilderPrinter;
 import android.view.View;
 import android.widget.Button;
 
@@ -37,12 +41,18 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.http.ExceptionLogger;
@@ -112,23 +122,167 @@ public class ScanLink extends Activity {
 
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
-        System.out.printf("IMAGE GOES TO: %s", mCurrentPhotoPath);
+
+        System.out.println("CURRENT PATH IN CREATED IMAGE IS: " + mCurrentPhotoPath);
+
+//        // UPLOAD FILE TO S3
+//
+//        // get current date
+//        // Tue, 25 Jul 2017 13:46:13 +0000
+//        DateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+//        Date date = new Date();
+//        String current_datetime = dateFormat.format(date);
+//
+//        // derive signature
+//        byte[] aws_signature = new byte[]{};
+//        try {
+//            aws_signature = getSignatureKey(Constants.AWS_KEY, current_datetime, mCurrentPhotoPath);
+//        }
+//        catch (Exception e){
+//
+//        }
+//        // create headers
+//        final String authorization = "AWS" + " " + Constants.AWS_KEY + ":" + aws_signature;
+//        System.out.println("AUTHORIZATION IS: " + authorization);
+//        final long content_length = image.length();
+//
+//        // make request
+//        final String endpoint = "https://" + Constants.BUCKET_NAME + ".s3.amazonaws.com/" + mCurrentPhotoPath;
+//
+//        final URL u = new URL(endpoint);
+//
+//        try {
+//            // start thread
+//            new Thread() {
+//                @Override
+//                public void run() {
+//                    try {
+//                        HttpsURLConnection connection = null;
+//                        connection = (HttpsURLConnection) u.openConnection();
+//                        connection.setRequestMethod("POST");
+//
+//                        //set the content length and authorization headers
+//                        connection.setRequestProperty("Authorization", authorization);
+//                        connection.setRequestProperty("Content-Length", Long.toString(content_length));
+//
+//                        connection.setAllowUserInteraction(false);
+//
+//                        //Connect to the server
+//                        connection.connect();
+//
+//                        int status = connection.getResponseCode();
+//                        Log.i("HTTP Client", "AWS HTTP status code : " + status);
+//                        Log.i("HTTP Client", "AWS HTTP message: " + connection.getResponseMessage());
+//                    }
+//                    catch (Exception e) {
+//                        System.out.println("Error Creating Connection for AWS upload" + e);
+//                    }
+//
+//                }
+//            }.start();// end thread
+//        }
+//        catch (Exception e){
+//            System.out.println("ERROR UPLOADING FILE " + e);
+//        }
+
         return image;
+
     }
 
+    // UPLOAD FILE TO S3
+    private static void uploadToS3Bucket(File image){
+        try {
+
+            String filePath  = image.getAbsolutePath();
+
+            // get current date
+            // Tue, 25 Jul 2017 13:46:13 +0000
+            DateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+            Date date = new Date();
+            String current_datetime = dateFormat.format(date);
+
+            // derive signature
+            byte[] aws_signature = new byte[]{};
+            try {
+                aws_signature = getSignatureKey(Constants.AWS_KEY, current_datetime, filePath);
+            } catch (Exception e) {
+
+            }
+            // create headers
+            final String authorization = "AWS" + " " + Constants.AWS_KEY + ":" + aws_signature;
+            System.out.println("AUTHORIZATION IS: " + authorization);
+            final long content_length = image.length();
+
+            // make request
+            final String endpoint = "https://" + Constants.BUCKET_NAME + ".s3.amazonaws.com/readonly" + filePath;
+
+            final URL u = new URL(endpoint);
+
+            try {
+                // start thread
+                new Thread() {
+                    @Override
+                    public void run() {
+                        try {
+                            HttpsURLConnection connection = null;
+                            connection = (HttpsURLConnection) u.openConnection();
+                            connection.setRequestMethod("PUT");
+
+                            //set the content length and authorization headers
+                            connection.setRequestProperty("Authorization", authorization);
+                            connection.setRequestProperty("Content-Length", Long.toString(content_length));
+                            connection.setRequestProperty("Content-Type", "image/jpeg");
+
+                            connection.setAllowUserInteraction(false);
+
+                            //Connect to the server
+                            connection.connect();
+
+                            int status = connection.getResponseCode();
+                            Log.i("HTTP Client", "AWS HTTP status code : " + status);
+                            Log.i("HTTP Client", "AWS HTTP message: " + connection.getResponseMessage());
+                        } catch (Exception e) {
+                            System.out.println("Error Creating Connection for AWS upload" + e);
+                        }
+
+                    }
+                }.start();// end thread
+            } catch (Exception e) {
+                System.out.println("ERROR UPLOADING FILE " + e);
+            }
+        }
+        catch(Exception e){
+            //
+        }
+    }
+
+    private static byte[] HmacSHA256(String data, byte[] key) throws Exception {
+        String algorithm="HmacSHA256";
+        Mac mac = Mac.getInstance(algorithm);
+        mac.init(new SecretKeySpec(key, algorithm));
+        return mac.doFinal(data.getBytes("UTF8"));
+    }
+
+    private static byte[] getSignatureKey(String key, String dateStamp, String filePath) throws Exception {
+        String method = "PUT\n";
+        String mediaType = "image/jpeg\n";
+        String current_datetime = dateStamp + "\n";
+        String file_path = filePath;
+        String string_to_sign = method + mediaType + current_datetime + file_path;
+        byte[] kSecret = ("AWS4" + key).getBytes("UTF8");
+        byte[] hashed_signature = HmacSHA256(string_to_sign, kSecret);
+        return hashed_signature;
+    }
 
 
     // call ms azure api & get back image text
     private String getTextFromImage() throws IOException {
-
         String api_endpoint = getString(R.string.api_endpoint);
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
-//        final URL obj = new URL(api_endpoint +
         String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
         HttpsURLConnection connection = null;
         try {
-
             URL u = new URL(url);
             connection = (HttpsURLConnection) u.openConnection();
             connection.setRequestMethod("POST");
@@ -140,12 +294,9 @@ public class ScanLink extends Activity {
 
 
             connection.setAllowUserInteraction(false);
-//            connection.setConnectTimeout(3000);
-//            connection.setReadTimeout(3000);
 
             if (json != null) {
                 //set the content length of the body
-//                connection.setRequestProperty("Content-length", json.getBytes().length + "");
                 connection.setDoInput(true);
                 connection.setDoOutput(true);
                 connection.setUseCaches(false);
@@ -289,6 +440,9 @@ public class ScanLink extends Activity {
             File photoFile = null;
             try {
                 photoFile = createImageFile();
+                if(photoFile != null){
+                    uploadToS3Bucket(photoFile);
+                }
             } catch (IOException ex) {
                 // Error occurred while creating the File
             }
