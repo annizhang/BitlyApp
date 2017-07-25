@@ -14,15 +14,35 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import javax.net.ssl.HttpsURLConnection;
 
 import org.apache.http.ExceptionLogger;
@@ -32,6 +52,9 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Created by heather on 7/24/17.
@@ -93,87 +116,125 @@ public class ScanLink extends Activity {
         return image;
     }
 
+
+
     // call ms azure api & get back image text
-    private String getTextFromImage(String filePath) throws IOException {
+    private String getTextFromImage() throws IOException {
 
-        // Convert image to byte array
-        Bitmap bm = BitmapFactory.decodeFile(filePath);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bm.compress(Bitmap.CompressFormat.JPEG, 50, baos); //bm is the bitmap object; was 100 for highest image quality
-        final byte[] encodedImage = baos.toByteArray();
-        //String encodedImage = Base64.encodeToString(b, Base64.DEFAULT);
-        try
-        {
-            String api_endpoint = getString(R.string.api_endpoint);
-            final String url_parameters = "?language=unk&detectOrientation=true";
-            final URL obj = new URL(api_endpoint);
+        String api_endpoint = getString(R.string.api_endpoint);
+        final String url_parameters = "?language=unk&detectOrientation=true";
+        final String url = api_endpoint + url_parameters;
+//        final URL obj = new URL(api_endpoint +
+        String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
+        HttpsURLConnection connection = null;
+        try {
 
-            System.out.println("URL OBJECT IS: " + obj);
+            URL u = new URL(url);
+            connection = (HttpsURLConnection) u.openConnection();
+            connection.setRequestMethod("POST");
 
-            final HttpsURLConnection conn = (HttpsURLConnection) obj.openConnection();
-            System.out.println("\nCreated connection\n");
-
-            new Thread(){
-                @Override
-                public void run(){
-                    try {
+            //set the sending type and receiving type to json
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("Ocp-Apim-Subscription-Key", getString(R.string.subscription_key));
 
 
-                        System.out.println("Inside thread");
+            connection.setAllowUserInteraction(false);
+//            connection.setConnectTimeout(3000);
+//            connection.setReadTimeout(3000);
 
-                        conn.setDoOutput(true);
-                        conn.setInstanceFollowRedirects(false);
-                        conn.setRequestMethod("POST");
-                        conn.setUseCaches(false);
+            if (json != null) {
+                //set the content length of the body
+//                connection.setRequestProperty("Content-length", json.getBytes().length + "");
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+                connection.setUseCaches(false);
 
-                        //add request headers
-                        //conn.setRequestProperty("Content-Type", "application/octet-stream");
-                        conn.setRequestProperty("Content-Type", "application/json");
-                        conn.setRequestProperty("Ocp-Apim-Subscription-Key", getString(R.string.subscription_key));
+                //send the json as body of the request
+                OutputStream outputStream = connection.getOutputStream();
+                outputStream.write(json.getBytes("UTF-8"));
+                outputStream.close();
+            }
 
-                        System.out.println("Added headers to connection");
+            //Connect to the server
+            connection.connect();
 
-
-                        // write body to output stream
-                        int len = encodedImage.length;
-                        final DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
-                        try {
-                            wr.write(encodedImage, 0, encodedImage.length);
-                        }
-                        catch (Exception e){
-                            System.out.println("Error writing bytes" + e);
-                        }
-
-                        System.out.println("Wrote request body");
-
-                        // Send post request
-                        wr.writeBytes(url_parameters);
-                        wr.flush();
-
-                        System.out.println("Closed DataOutputStream");
-
-                        int response_code = conn.getResponseCode();
-                        System.out.printf("Response Code is: %d\n", response_code);
-
-                        String response_message = conn.getResponseMessage();
-                        System.out.println("Response message is: \n" + response_message);
-
-                        wr.close();
-
-                        // Response body
+            int status = connection.getResponseCode();
+            Log.i("HTTP Client", "HTTP status code : " + status);
+            switch (status) {
+                case 200:
+                case 201:
+                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        sb.append(line + "\n");
                     }
-                    catch (Exception e){
-                        System.out.println("Exception with threads is: " + e);
+                    bufferedReader.close();
+                    Log.i("HTTP Client", "Received String : " + sb.toString());
+                    //return received string
+                    return getLink(sb.toString());
+            }
+
+        } catch (MalformedURLException ex) {
+            Log.e("1 HTTP Client", "Error in http connection" + ex.toString());
+        } catch (IOException ex) {
+            Log.e("2 HTTP Client", "Error in http connection" + ex.toString());
+        } catch (Exception ex) {
+            Log.e("3 HTTP Client", "Error in http connection" + ex.toString());
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.disconnect();
+                } catch (Exception ex) {
+                    Log.e("4 HTTP Client", "Error in http connection" + ex.toString());
+                }
+            }
+        }
+        return "";
+    }
+
+    private String getLink(String response){
+        System.out.println("in getlink");
+        try {
+            JSONObject jsonRes = new JSONObject(response);
+            JSONArray regions= (JSONArray)jsonRes.get("regions");
+            System.out.println("regions: " + regions);
+            return searchForLink(regions);
+        } catch (JSONException e){
+            System.out.println("json exception " + e);
+        }
+        return "";
+    }
+
+    //takes in REGIONS
+    private String searchForLink(JSONArray arrResult){
+        for (int i = 0; i < arrResult.length(); i++){
+            System.out.println("region n." + i);
+            try{
+                JSONObject eachRegion  = (JSONObject) arrResult.get(i);
+                JSONArray line = (JSONArray) eachRegion.get("lines");
+                for (int j = 0; j < line.length(); j++){
+                    System.out.println("line n." + j);
+                    JSONObject eachLine = (JSONObject) line.get(j);
+                    JSONArray words = (JSONArray) eachLine.get("words");
+                    for (int k = 0; k < words.length(); k++){
+                        System.out.println("word n." + k);
+                        JSONObject word = (JSONObject) words.get(k);
+                        String text = (String) word.get("text");
+                        System.out.println("text " + text);
+                        if (text.toLowerCase().contains("www")){
+                            return text;
+                        }
                     }
                 }
-            }.start();
+            } catch (JSONException e){
+                System.out.println("jsonexception in search " + e);
+
+            }
 
         }
-        catch (Exception e)
-        {
-            System.out.println("Error doing something in getTextFromImage: " + e);
-        }
-        return imageText;
+        return "";
     }
 
     // parse image text to get link & calendar date text
@@ -193,9 +254,29 @@ public class ScanLink extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             try {
-                getTextFromImage(mCurrentPhotoPath);
+                Thread thread = new Thread(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        try  {
+                            //Your code goes here
+                            String scannedLink = "http://"+getTextFromImage().toLowerCase();
+
+                            Intent myIntent = new Intent(ScanLink.this, CreateLink.class);
+                            myIntent.putExtra("scanned_link", scannedLink); //Optional parameters
+                            ScanLink.this.startActivity(myIntent);
+
+                        } catch (Exception e) {
+                            System.out.println("ERROR IN THREAD!!");
+                            e.printStackTrace();
+                        }
+                    }
+                });
+
+                thread.start();
+
             }
-            catch (IOException e) {
+            catch (Exception e) {
                 System.out.println("Error calling getTextFromImage");
             }
         }

@@ -59,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             mTextView.setVisibility(View.INVISIBLE);
                             String accessCode = response;
+                            System.out.println("accesscode is " + accessCode);
+                            Constants constants = new Constants();
+                            constants.ACCESSCODE = accessCode;
                             intent.putExtra(ACCESSCODE, accessCode);
                             startActivity(intent);
                         }

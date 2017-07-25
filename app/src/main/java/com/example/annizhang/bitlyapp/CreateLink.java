@@ -57,6 +57,12 @@ public class CreateLink extends AppCompatActivity{
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
+        String scannedLink = intent.getStringExtra("scanned_link");
+        if (scannedLink != ""){
+            EditText editLink = (EditText) findViewById(R.id.editLink);
+            editLink.setText(scannedLink);
+        }
+
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
         linksList = (ListView) findViewById(R.id.listView);
 
@@ -130,7 +136,8 @@ public class CreateLink extends AppCompatActivity{
         final TextView mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
+        System.out.println("CreateLink accesscode: " + ACCESSCODE);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + Constants.ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
                 "&note" + note;
 
         // Request a string response from the provided URL.
@@ -141,10 +148,10 @@ public class CreateLink extends AppCompatActivity{
                         // Display the first 500 characters of the response string.
                         JSONObject newUrl;
                         try {
+                            System.out.println("response: " + response);
                             newUrl = new JSONObject(response);
+
                             mTextView.setText(newUrl.getJSONObject("data").getJSONObject("link_save").getString("link"));
-                            Button copyButton = (Button) findViewById(R.id.button_copy);
-                            copyButton.setVisibility(View.VISIBLE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -161,7 +168,7 @@ public class CreateLink extends AppCompatActivity{
 
     public void getLinks() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -198,7 +205,7 @@ public class CreateLink extends AppCompatActivity{
 
     public void getStats() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
