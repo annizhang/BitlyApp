@@ -145,7 +145,7 @@ public class ScanLink extends Activity {
             CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                     ctx,
                     Constants.COGNITO_POOL_ID, // Identity pool ID
-                    Constants.BUCKET_REGION // Region
+                    Constants.COGNITO_POOL_REGION // Region
             );
 
             // Create an S3 client
@@ -272,7 +272,7 @@ public class ScanLink extends Activity {
                         JSONObject word = (JSONObject) words.get(k);
                         String text = (String) word.get("text");
                         System.out.println("text " + text);
-                        if (text.toLowerCase().contains("www")){
+                        if (text.toLowerCase().contains("www") || text.toLowerCase().contains(".com")){
                             return text;
                         }
                     }
@@ -310,7 +310,13 @@ public class ScanLink extends Activity {
                     public void run() {
                         try  {
                             //Your code goes here
-                            String scannedLink = "http://"+getTextFromImage(imageFile.getName()).toLowerCase();
+                            String scannedLink;
+                            String possible_url = getTextFromImage(imageFile.getName());
+                            if(possible_url != "") {
+                                scannedLink = "http://" + possible_url.toLowerCase();
+                            }else {
+                                scannedLink = "whoops, no url found";
+                            }
 
                             Intent myIntent = new Intent(ScanLink.this, CreateLink.class);
                             myIntent.putExtra("scanned_link", scannedLink); //Optional parameters
