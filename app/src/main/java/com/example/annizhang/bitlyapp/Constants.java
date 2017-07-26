@@ -12,4 +12,5 @@ public class Constants {
     public static Regions COGNITO_POOL_REGION = Regions.US_EAST_1;
     public static String BUCKET_NAME = "hackweekapp";
     public static String BUCKET_LOCATION = "https://s3-us-west-2.amazonaws.com/hackweekapp/readonly/";
+    public static final String DEFAULT_FONT = "fonts/ProximaNovaCond-Semibold.otf";
 }
