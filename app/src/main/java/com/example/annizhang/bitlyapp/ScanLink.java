@@ -350,7 +350,7 @@ public class ScanLink extends Activity {
             List<Word> words = line.getWords();
             for (int j = 0; j < words.size(); j++) {
                 Word word = words.get(j);
-                String text = word.toString();
+                String text = word.toString().toLowerCase();
                 if (text.contains("www") || (text.contains(".com"))) {
                     System.out.println("FOUND LINK!");
                     return text;
