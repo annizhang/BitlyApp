@@ -12,7 +12,7 @@
         android:layout_height="589dp"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="4dp"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -48,7 +48,7 @@
                         android:layout_marginLeft="16dp"
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="16dp"
-                        android:background="@android:color/holo_orange_light"
+                        android:background="@color/colorAccent"
                         android:text="@string/button_fromImage"
                         android:visibility="visible"
                         app:layout_constraintLeft_toRightOf="@+id/button_copy" />
@@ -100,7 +100,7 @@
                         android:layout_marginLeft="16dp"
                         android:layout_marginStart="16dp"
                         android:layout_marginTop="16dp"
-                        android:background="@android:color/holo_orange_light"
+                        android:background="@color/colorAccent"
                         android:text="@string/button_makelink"
                         android:visibility="visible"
                         app:layout_constraintLeft_toRightOf="@+id/button_copy" />
