@@ -6,7 +6,7 @@ import java.util.List;
  * Created by annizhang on 7/25/17.
  */
 
-public class Region {
+public class MSRegion {
     private List<Line> lines;
     public List<Line> getLines(){
         return lines;

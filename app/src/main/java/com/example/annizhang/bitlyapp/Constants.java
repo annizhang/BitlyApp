@@ -1,7 +1,6 @@
 package com.example.annizhang.bitlyapp;
 
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.model.Region;
 
 /**
  * Created by annizhang on 7/25/17.

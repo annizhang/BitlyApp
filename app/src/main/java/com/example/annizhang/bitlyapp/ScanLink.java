@@ -12,16 +12,21 @@ import android.net.wifi.WifiConfiguration;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.SyncStateContract;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
+
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import android.util.Log;
 import android.util.StringBuilderPrinter;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
@@ -78,6 +83,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONStringer;
 
 /**
  * Created by heather on 7/24/17.
@@ -107,7 +113,9 @@ public class ScanLink extends Activity {
     private String linkText;
     private String mCurrentPhotoPath; //send to MS Azure
     private static Context ctx;
-    private File imageFile;
+    private static File imageFile;
+    private static String possible_url;
+    private static String scanned_link;
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -143,8 +151,37 @@ public class ScanLink extends Activity {
         return image;
     }
 
+    private void getTextFromStringWrapper() {
+        try {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try  {
+                        possible_url = getTextFromImage(imageFile.getName());
+                        if(possible_url != "") {
+                            scanned_link = "http://" + possible_url.toLowerCase();
+                        }else {
+                            scanned_link = "whoops, no url found in image";
+                        }
+                        Intent myIntent = new Intent(ScanLink.this, CreateLink.class);
+                        myIntent.putExtra("scanned_link", scanned_link); //Optional parameters
+                        ScanLink.this.startActivity(myIntent);
+                    } catch (Exception e) {
+                        System.out.println("ERROR IN THREAD: " + e);
+                        e.printStackTrace();
+                    }
+                }
+            });
+            thread.start();
+
+        }
+        catch (Exception e) {
+            System.out.println("Error calling getTextFromImage");
+        }
+    }
+
     // UPLOAD FILE TO S3
-    private static void uploadToS3Bucket(File image) {
+    private void uploadToS3Bucket(File image) {
         try {
             // Initialize the Amazon Cognito credentials provider
             CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
@@ -162,32 +199,68 @@ public class ScanLink extends Activity {
 
             System.out.println("IMAGE NAME: " + image.getName());
 
-            TransferObserver observer = transferUtility.upload(
+            final TransferObserver observer = transferUtility.upload(
                     Constants.BUCKET_NAME,     /* The bucket to upload to */
                     "readonly/" + file_name,    /* The key for the uploaded object */
                     image       /* The file where the data to upload exists */
             );
+
+            observer.setTransferListener(new TransferListener(){
+                @Override
+                public void onStateChanged(int id, TransferState state) {
+
+                    if (state.COMPLETED.equals(observer.getState())) {
+                        System.out.println("UPLOAD COMPLETE");
+                        getTextFromStringWrapper();
+                    }
+                }
+                @Override
+                public void onProgressChanged(int id, long bytesCurrent, long bytesTotal) {
+                    long _bytesCurrent = bytesCurrent;
+                    long _bytesTotal = bytesTotal;
+
+                    Log.d("current bytes: ","" +_bytesCurrent);
+                    Log.d("total bytes: ","" +_bytesTotal);
+
+                    float percentage =  ((float)_bytesCurrent /(float)_bytesTotal * 100);
+                    Log.d("percentage completed","" +percentage);
+                }
+
+                @Override
+                public void onError(int id, Exception ex) {
+                    System.out.println("ERROR uploading file");
+                }
+            });
         }
         catch (Exception e){
             System.out.println("Error uploading to s3 bucket: " + e);
         }
     }
 
+    public static boolean isJSONValid(String test) {
+        try {
+            new JSONObject(test);
+        } catch (JSONException ex) {
+                return false;
+        }
+        return true;
+    }
+
     // call ms azure api & get back image text
-    private String getTextFromImage(String fileName) throws IOException {
+    private String getTextFromImage(String fileName) throws IOException, JSONException {
         String api_endpoint = getString(R.string.api_endpoint);
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
-<<<<<<< HEAD
 
-        // create aws file name; will need to pass in file name
         String aws_file_name = Constants.BUCKET_LOCATION + fileName;
-        String json = "{'url':" + aws_file_name + "'}";
 
-        //String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
-=======
-        String json = "{'url':'http://www.savebay.org/file/ICC-POSTER-WHALE-with-URL.compressed-page-001.jpg'}";
->>>>>>> 718c89a... stream and get link
+
+        String json = String.format("{\"url\":\"%s\"}", aws_file_name);
+
+        if(!isJSONValid(json)){
+            System.out.println("JSON NOT VALID!");
+        }
+
         HttpsURLConnection connection = null;
         try {
             URL u = new URL(url);
@@ -218,7 +291,8 @@ public class ScanLink extends Activity {
             connection.connect();
 
             int status = connection.getResponseCode();
-            Log.i("HTTP Client", "HTTP status code : " + status);
+            Log.i("HTTP Client", "MS HTTP status code : " + status);
+            Log.i("HTTP Client", "MS HTTP status message : " + connection.getResponseMessage());
             switch (status) {
                 case 200:
                 case 201:
@@ -231,7 +305,7 @@ public class ScanLink extends Activity {
                             if (name.equals("regions")){
                                 reader.beginArray();
                                 while(reader.hasNext()){
-                                    final Region region = gson.fromJson(reader, Region.class);
+                                    final MSRegion region = gson.fromJson(reader, MSRegion.class);
                                     String foundLink = searchForLink(region);
                                     if (foundLink != ""){
                                         return foundLink;
@@ -269,76 +343,27 @@ public class ScanLink extends Activity {
     }
 
     //takes in REGIONS
-
-    private String searchForLink(JSONArray arrResult){
-        for (int i = 0; i < arrResult.length(); i++){
-            System.out.println("region n." + i);
-            try{
-                JSONObject eachRegion  = (JSONObject) arrResult.get(i);
-                JSONArray line = (JSONArray) eachRegion.get("lines");
-                for (int j = 0; j < line.length(); j++){
-                    System.out.println("line n." + j);
-                    JSONObject eachLine = (JSONObject) line.get(j);
-                    JSONArray words = (JSONArray) eachLine.get("words");
-                    for (int k = 0; k < words.length(); k++){
-                        System.out.println("word n." + k);
-                        JSONObject word = (JSONObject) words.get(k);
-                        String text = (String) word.get("text");
-                        System.out.println("text " + text);
-                        if (text.toLowerCase().contains("www") || text.toLowerCase().contains(".com")){
-                            return text;
-                        }
-                    }
-
-    // parse image text to get link & calendar date text
-    private String parseImageText() {
+    private static String searchForLink(MSRegion region){
+        List<Line> lines = region.getLines();
+        for (int i = 0; i < lines.size(); i++) {
+            Line line = lines.get(i);
+            List<Word> words = line.getWords();
+            for (int j = 0; j < words.size(); j++) {
+                Word word = words.get(j);
+                String text = word.toString();
+                if (text.contains("www") || (text.contains(".com"))) {
+                    System.out.println("FOUND LINK!");
+                    return text;
+                }
+            }
+        }
         return "";
-    }
-
-    private void galleryAddPic() {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(mCurrentPhotoPath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            uploadToS3Bucket(imageFile);
-            try {
-                Thread thread = new Thread(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try  {
-                            //Your code goes here
-                            String scannedLink;
-                            String possible_url = getTextFromImage(imageFile.getName());
-                            if(possible_url != "") {
-                                scannedLink = "http://" + possible_url.toLowerCase();
-                            }else {
-                                scannedLink = "whoops, no url found";
-                            }
-
-                            Intent myIntent = new Intent(ScanLink.this, CreateLink.class);
-                            myIntent.putExtra("scanned_link", scannedLink); //Optional parameters
-                            ScanLink.this.startActivity(myIntent);
-
-                        } catch (Exception e) {
-                            System.out.println("ERROR IN THREAD: " + e);
-                            e.printStackTrace();
-                        }
-                    }
-                });
-
-                thread.start();
-
-            }
-            catch (Exception e) {
-                System.out.println("Error calling getTextFromImage");
-            }
+            uploadToS3Bucket(imageFile); // Once the file is uploaded, this will make the call to MS Azure
         }
     }
 
