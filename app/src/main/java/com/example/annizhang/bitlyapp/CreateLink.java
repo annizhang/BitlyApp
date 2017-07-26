@@ -58,7 +58,7 @@ public class CreateLink extends AppCompatActivity{
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
         String scannedLink = intent.getStringExtra("scanned_link");
-        if (scannedLink != ""){
+        if (scannedLink != null && scannedLink != ""){
             EditText editLink = (EditText) findViewById(R.id.editLink);
             editLink.setText(scannedLink);
         }
