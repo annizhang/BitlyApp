@@ -39,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
 
         final EditText name = (EditText)findViewById(R.id.editText1);
         final EditText pass = (EditText)findViewById(R.id.editText2);
+        //auto populate for testing
+        name.setText("anniblue");
+        pass.setText("blueparakeet");
         final String username = name.getText().toString();
         final String password = pass.getText().toString();
         final TextView mTextView = (TextView) findViewById(R.id.textView2);
@@ -59,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             mTextView.setVisibility(View.INVISIBLE);
                             String accessCode = response;
+                            System.out.println("accesscode is " + accessCode);
+                            Constants.ACCESSCODE = accessCode;
                             intent.putExtra(ACCESSCODE, accessCode);
                             startActivity(intent);
                         }
