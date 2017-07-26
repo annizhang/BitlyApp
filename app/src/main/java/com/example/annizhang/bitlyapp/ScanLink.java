@@ -22,6 +22,13 @@ import android.util.StringBuilderPrinter;
 import android.view.View;
 import android.widget.Button;
 
+import com.amazonaws.auth.CognitoCachingCredentialsProvider;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferListener;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferObserver;
+import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -93,7 +100,7 @@ public class ScanLink extends Activity {
     private String imageText; //
     private String linkText;
     private String mCurrentPhotoPath; //send to MS Azure
-    private Context ctx;
+    private static Context ctx;
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -102,6 +109,7 @@ public class ScanLink extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         try {
+            ctx = this.getApplicationContext();
             dispatchTakePictureIntent();
         }
         catch (IOException e){
@@ -125,134 +133,36 @@ public class ScanLink extends Activity {
 
         System.out.println("CURRENT PATH IN CREATED IMAGE IS: " + mCurrentPhotoPath);
 
-//        // UPLOAD FILE TO S3
-//
-//        // get current date
-//        // Tue, 25 Jul 2017 13:46:13 +0000
-//        DateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-//        Date date = new Date();
-//        String current_datetime = dateFormat.format(date);
-//
-//        // derive signature
-//        byte[] aws_signature = new byte[]{};
-//        try {
-//            aws_signature = getSignatureKey(Constants.AWS_KEY, current_datetime, mCurrentPhotoPath);
-//        }
-//        catch (Exception e){
-//
-//        }
-//        // create headers
-//        final String authorization = "AWS" + " " + Constants.AWS_KEY + ":" + aws_signature;
-//        System.out.println("AUTHORIZATION IS: " + authorization);
-//        final long content_length = image.length();
-//
-//        // make request
-//        final String endpoint = "https://" + Constants.BUCKET_NAME + ".s3.amazonaws.com/" + mCurrentPhotoPath;
-//
-//        final URL u = new URL(endpoint);
-//
-//        try {
-//            // start thread
-//            new Thread() {
-//                @Override
-//                public void run() {
-//                    try {
-//                        HttpsURLConnection connection = null;
-//                        connection = (HttpsURLConnection) u.openConnection();
-//                        connection.setRequestMethod("POST");
-//
-//                        //set the content length and authorization headers
-//                        connection.setRequestProperty("Authorization", authorization);
-//                        connection.setRequestProperty("Content-Length", Long.toString(content_length));
-//
-//                        connection.setAllowUserInteraction(false);
-//
-//                        //Connect to the server
-//                        connection.connect();
-//
-//                        int status = connection.getResponseCode();
-//                        Log.i("HTTP Client", "AWS HTTP status code : " + status);
-//                        Log.i("HTTP Client", "AWS HTTP message: " + connection.getResponseMessage());
-//                    }
-//                    catch (Exception e) {
-//                        System.out.println("Error Creating Connection for AWS upload" + e);
-//                    }
-//
-//                }
-//            }.start();// end thread
-//        }
-//        catch (Exception e){
-//            System.out.println("ERROR UPLOADING FILE " + e);
-//        }
-
         return image;
-
     }
 
     // UPLOAD FILE TO S3
-    private static void uploadToS3Bucket(File image){
+    private static void uploadToS3Bucket(File image) {
         try {
+            // Initialize the Amazon Cognito credentials provider
+            CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
+                    ctx,
+                    "us-east-1:12264668-e435-4f52-a4b0-34072aa3a426", // Identity pool ID
+                    Regions.US_EAST_1 // Region
+            );
 
-            String filePath  = image.getAbsolutePath();
+            // Create an S3 client
+            AmazonS3 s3 = new AmazonS3Client(credentialsProvider);
 
-            // get current date
-            // Tue, 25 Jul 2017 13:46:13 +0000
-            DateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
-            Date date = new Date();
-            String current_datetime = dateFormat.format(date);
+            TransferUtility transferUtility = new TransferUtility(s3, ctx);
 
-            // derive signature
-            byte[] aws_signature = new byte[]{};
-            try {
-                aws_signature = getSignatureKey(Constants.AWS_KEY, current_datetime, filePath);
-            } catch (Exception e) {
+            String file_name = image.getName();
 
-            }
-            // create headers
-            final String authorization = "AWS" + " " + Constants.AWS_KEY + ":" + aws_signature;
-            System.out.println("AUTHORIZATION IS: " + authorization);
-            final long content_length = image.length();
+            System.out.println("IMAGE NAME: " + image.getName());
 
-            // make request
-            final String endpoint = "https://" + Constants.BUCKET_NAME + ".s3.amazonaws.com/readonly" + filePath;
-
-            final URL u = new URL(endpoint);
-
-            try {
-                // start thread
-                new Thread() {
-                    @Override
-                    public void run() {
-                        try {
-                            HttpsURLConnection connection = null;
-                            connection = (HttpsURLConnection) u.openConnection();
-                            connection.setRequestMethod("PUT");
-
-                            //set the content length and authorization headers
-                            connection.setRequestProperty("Authorization", authorization);
-                            connection.setRequestProperty("Content-Length", Long.toString(content_length));
-                            connection.setRequestProperty("Content-Type", "image/jpeg");
-
-                            connection.setAllowUserInteraction(false);
-
-                            //Connect to the server
-                            connection.connect();
-
-                            int status = connection.getResponseCode();
-                            Log.i("HTTP Client", "AWS HTTP status code : " + status);
-                            Log.i("HTTP Client", "AWS HTTP message: " + connection.getResponseMessage());
-                        } catch (Exception e) {
-                            System.out.println("Error Creating Connection for AWS upload" + e);
-                        }
-
-                    }
-                }.start();// end thread
-            } catch (Exception e) {
-                System.out.println("ERROR UPLOADING FILE " + e);
-            }
+            TransferObserver observer = transferUtility.upload(
+                    Constants.BUCKET_NAME,     /* The bucket to upload to */
+                    "readonly/" + file_name,    /* The key for the uploaded object */
+                    image       /* The file where the data to upload exists */
+            );
         }
-        catch(Exception e){
-            //
+        catch (Exception e){
+            System.out.println("Error uploading to s3 bucket: " + e);
         }
     }
 
@@ -440,7 +350,8 @@ public class ScanLink extends Activity {
             File photoFile = null;
             try {
                 photoFile = createImageFile();
-                if(photoFile != null){
+                if(photoFile.exists()){
+                    System.out.println("IN DISPATCH FILE NAME IS: " + photoFile.getName());
                     uploadToS3Bucket(photoFile);
                 }
             } catch (IOException ex) {
