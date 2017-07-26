@@ -17,6 +17,7 @@ import android.provider.SyncStateContract;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 import android.util.Base64;
+import com.google.gson.stream.JsonReader;
 import android.util.Log;
 import android.util.StringBuilderPrinter;
 import android.view.View;
@@ -38,6 +39,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -46,6 +49,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -57,6 +61,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.crypto.Mac;
@@ -173,12 +178,16 @@ public class ScanLink extends Activity {
         String api_endpoint = getString(R.string.api_endpoint);
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
+<<<<<<< HEAD
 
         // create aws file name; will need to pass in file name
         String aws_file_name = Constants.BUCKET_LOCATION + fileName;
         String json = "{'url':" + aws_file_name + "'}";
 
         //String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
+=======
+        String json = "{'url':'http://www.savebay.org/file/ICC-POSTER-WHALE-with-URL.compressed-page-001.jpg'}";
+>>>>>>> 718c89a... stream and get link
         HttpsURLConnection connection = null;
         try {
             URL u = new URL(url);
@@ -213,18 +222,34 @@ public class ScanLink extends Activity {
             switch (status) {
                 case 200:
                 case 201:
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                    StringBuilder sb = new StringBuilder();
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        sb.append(line + "\n");
+                    try{
+                        JsonReader reader = new JsonReader(new InputStreamReader(connection.getInputStream()));
+                        Gson gson = new GsonBuilder().create();
+                        reader.beginObject();
+                        while(reader.hasNext()){
+                            String name = reader.nextName();
+                            if (name.equals("regions")){
+                                reader.beginArray();
+                                while(reader.hasNext()){
+                                    final Region region = gson.fromJson(reader, Region.class);
+                                    String foundLink = searchForLink(region);
+                                    if (foundLink != ""){
+                                        return foundLink;
+                                    }
+                                }
+                                reader.endArray();
+                            } else {
+                                reader.skipValue();
+                            }
+                        }
+                        reader.endObject();
+                        reader.close();
+                    } catch (UnsupportedEncodingException ex){
+                        System.out.println("unsupported encoding exception");
+                    } catch (IOException ex){
+                        System.out.println("io exception");
                     }
-                    bufferedReader.close();
-                    Log.i("HTTP Client", "Received String : " + sb.toString());
-                    //return received string
-                    return getLink(sb.toString());
             }
-
         } catch (MalformedURLException ex) {
             Log.e("1 HTTP Client", "Error in http connection" + ex.toString());
         } catch (IOException ex) {
@@ -243,20 +268,21 @@ public class ScanLink extends Activity {
         return "";
     }
 
-    private String getLink(String response){
-        System.out.println("in getlink");
-        try {
-            JSONObject jsonRes = new JSONObject(response);
-            JSONArray regions= (JSONArray)jsonRes.get("regions");
-            System.out.println("regions: " + regions);
-            return searchForLink(regions);
-        } catch (JSONException e){
-            System.out.println("json exception " + e);
-        }
-        return "";
-    }
+//    private String getLink(String response){
+//        System.out.println("in getlink");
+//        try {
+//            JSONObject jsonRes = new JSONObject(response);
+//            JSONArray regions= (JSONArray)jsonRes.get("regions");
+//            System.out.println("regions: " + regions);
+//            return searchForLink(regions);
+//        } catch (JSONException e){
+//            System.out.println("json exception " + e);
+//        }
+//        return "";
+//    }
 
     //takes in REGIONS
+
     private String searchForLink(JSONArray arrResult){
         for (int i = 0; i < arrResult.length(); i++){
             System.out.println("region n." + i);
@@ -276,15 +302,6 @@ public class ScanLink extends Activity {
                             return text;
                         }
                     }
-                }
-            } catch (JSONException e){
-                System.out.println("jsonexception in search " + e);
-
-            }
-
-        }
-        return "";
-    }
 
     // parse image text to get link & calendar date text
     private String parseImageText() {
