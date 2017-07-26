@@ -68,6 +68,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -351,8 +353,13 @@ public class ScanLink extends Activity {
             for (int j = 0; j < words.size(); j++) {
                 Word word = words.get(j);
                 String text = word.toString().toLowerCase();
-                if (text.contains("www") || (text.contains(".com"))) {
-                    System.out.println("FOUND LINK!");
+                Pattern r = Pattern.compile(Constants.URL_REGEXP);
+                Matcher m = r.matcher(text);
+                if(m.find( )){
+                    System.out.println("FOUND VALUE IN REGEX CHECK: " + m.group(0));
+                    return text;
+                }else if (text.contains("www") || text.contains(".com") || text.contains("http") || text.contains("https")) {
+                    System.out.println("FOUND LINK IN NAIVE CHECK!");
                     return text;
                 }
             }

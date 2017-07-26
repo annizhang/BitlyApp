@@ -12,4 +12,14 @@ public class Constants {
     public static Regions COGNITO_POOL_REGION = Regions.US_EAST_1;
     public static String BUCKET_NAME = "hackweekapp";
     public static String BUCKET_LOCATION = "https://s3-us-west-2.amazonaws.com/hackweekapp/readonly/";
+    public static String URL_REGEXP = "\\b(((ht|f)tp(s?)\\:\\/\\/|~\\/|\\/)|www.)" +
+            "(\\w+:\\w+@)?(([-\\w]+\\.)+(com|org|net|gov" +
+            "|mil|biz|info|mobi|name|aero|jobs|museum" +
+            "|travel|[a-z]{2}))(:[\\d]{1,5})?" +
+            "(((\\/([-\\w~!$+|.,=]|%[a-f\\d]{2})+)+|\\/)+|\\?|#)?" +
+            "((\\?([-\\w~!$+|.,*:]|%[a-f\\d{2}])+=?" +
+            "([-\\w~!$+|.,*:=]|%[a-f\\d]{2})*)" +
+            "(&(?:[-\\w~!$+|.,*:]|%[a-f\\d{2}])+=?" +
+            "([-\\w~!$+|.,*:=]|%[a-f\\d]{2})*)*)*" +
+            "(#([-\\w~!$+|.,*:=]|%[a-f\\d]{2})*)?\\b";
 }
