@@ -214,19 +214,6 @@ public class ScanLink extends Activity {
         return "";
     }
 
-//    private String getLink(String response){
-//        System.out.println("in getlink");
-//        try {
-//            JSONObject jsonRes = new JSONObject(response);
-//            JSONArray regions= (JSONArray)jsonRes.get("regions");
-//            System.out.println("regions: " + regions);
-//            return searchForLink(regions);
-//        } catch (JSONException e){
-//            System.out.println("json exception " + e);
-//        }
-//        return "";
-//    }
-
     //takes in REGIONS
     private String searchForLink(Region region){
         List<Line> lines = region.getLines();
