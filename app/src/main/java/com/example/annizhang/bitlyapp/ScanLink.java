@@ -29,6 +29,7 @@ import com.amazonaws.mobileconnectors.s3.transferutility.TransferUtility;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Region;
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -101,6 +102,7 @@ public class ScanLink extends Activity {
     private String linkText;
     private String mCurrentPhotoPath; //send to MS Azure
     private static Context ctx;
+    private File imageFile;
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int REQUEST_TAKE_PHOTO = 1;
@@ -142,8 +144,8 @@ public class ScanLink extends Activity {
             // Initialize the Amazon Cognito credentials provider
             CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
                     ctx,
-                    "us-east-1:12264668-e435-4f52-a4b0-34072aa3a426", // Identity pool ID
-                    Regions.US_EAST_1 // Region
+                    Constants.COGNITO_POOL_ID, // Identity pool ID
+                    Constants.BUCKET_REGION // Region
             );
 
             // Create an S3 client
@@ -166,31 +168,17 @@ public class ScanLink extends Activity {
         }
     }
 
-    private static byte[] HmacSHA256(String data, byte[] key) throws Exception {
-        String algorithm="HmacSHA256";
-        Mac mac = Mac.getInstance(algorithm);
-        mac.init(new SecretKeySpec(key, algorithm));
-        return mac.doFinal(data.getBytes("UTF8"));
-    }
-
-    private static byte[] getSignatureKey(String key, String dateStamp, String filePath) throws Exception {
-        String method = "PUT\n";
-        String mediaType = "image/jpeg\n";
-        String current_datetime = dateStamp + "\n";
-        String file_path = filePath;
-        String string_to_sign = method + mediaType + current_datetime + file_path;
-        byte[] kSecret = ("AWS4" + key).getBytes("UTF8");
-        byte[] hashed_signature = HmacSHA256(string_to_sign, kSecret);
-        return hashed_signature;
-    }
-
-
     // call ms azure api & get back image text
-    private String getTextFromImage() throws IOException {
+    private String getTextFromImage(String fileName) throws IOException {
         String api_endpoint = getString(R.string.api_endpoint);
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
-        String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
+
+        // create aws file name; will need to pass in file name
+        String aws_file_name = Constants.BUCKET_LOCATION + fileName;
+        String json = "{'url':" + aws_file_name + "'}";
+
+        //String json = "{'url':'http://136.144.152.120/wp-content/uploads/2015/10/URL-FutureFest-2015-GB-poster.jpg'}";
         HttpsURLConnection connection = null;
         try {
             URL u = new URL(url);
@@ -314,6 +302,7 @@ public class ScanLink extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            uploadToS3Bucket(imageFile);
             try {
                 Thread thread = new Thread(new Runnable() {
 
@@ -321,14 +310,14 @@ public class ScanLink extends Activity {
                     public void run() {
                         try  {
                             //Your code goes here
-                            String scannedLink = "http://"+getTextFromImage().toLowerCase();
+                            String scannedLink = "http://"+getTextFromImage(imageFile.getName()).toLowerCase();
 
                             Intent myIntent = new Intent(ScanLink.this, CreateLink.class);
                             myIntent.putExtra("scanned_link", scannedLink); //Optional parameters
                             ScanLink.this.startActivity(myIntent);
 
                         } catch (Exception e) {
-                            System.out.println("ERROR IN THREAD!!");
+                            System.out.println("ERROR IN THREAD: " + e);
                             e.printStackTrace();
                         }
                     }
@@ -347,21 +336,17 @@ public class ScanLink extends Activity {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // Create the File where the photo should go
-            File photoFile = null;
+            //File photoFile = null;
             try {
-                photoFile = createImageFile();
-                if(photoFile.exists()){
-                    System.out.println("IN DISPATCH FILE NAME IS: " + photoFile.getName());
-                    uploadToS3Bucket(photoFile);
-                }
+                imageFile = createImageFile();
             } catch (IOException ex) {
                 // Error occurred while creating the File
             }
             // Continue only if the File was successfully created
-            if (photoFile != null) {
+            if (imageFile.exists()) {
                 Uri photoURI = FileProvider.getUriForFile(this,
                         "com.example.android.fileprovider",
-                        photoFile);
+                        imageFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
             }
