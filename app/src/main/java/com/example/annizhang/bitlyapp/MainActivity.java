@@ -1,6 +1,7 @@
 package com.example.annizhang.bitlyapp;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -20,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import android.util.Base64;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +34,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ACCESSCODE = "";
 
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        TextView myTextView = (TextView) findViewById(R.id.textView);
+        myTextView.setTypeface(typeface);
+
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.drawable.ic_action_b_logo_2000);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
 
     }
 
@@ -39,6 +49,9 @@ public class MainActivity extends AppCompatActivity {
 
         final EditText name = (EditText)findViewById(R.id.editText1);
         final EditText pass = (EditText)findViewById(R.id.editText2);
+        //auto populate for testing
+        name.setText("anniblue");
+        pass.setText("blueparakeet");
         final String username = name.getText().toString();
         final String password = pass.getText().toString();
         final TextView mTextView = (TextView) findViewById(R.id.textView2);
@@ -59,6 +72,9 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             mTextView.setVisibility(View.INVISIBLE);
                             String accessCode = response;
+                            System.out.println("accesscode is " + accessCode);
+                            Constants.ACCESSCODE = accessCode;
+                            System.out.println("Constants.ACCESSCODE is " + Constants.ACCESSCODE);
                             intent.putExtra(ACCESSCODE, accessCode);
                             startActivity(intent);
                         }

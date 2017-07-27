@@ -1,15 +1,18 @@
 <resources>
-    <string name="app_name">Bitly App</string>
+    <string name="app_name">Snaply</string>
     <string name="edit_message">Enter a message</string>
     <string name="button_send">Send</string>
     <string name="button_makelink">Shorten</string>
     <string name="long_link">Long URL</string>
     <string name="link_title">Title</string>
     <string name="link_note">Link Note</string>
-    <string name="result"> Shorter Link</string>
+    <string name="result"> Bitlink</string>
     <string name="button_copy">copy</string>
     <string name="button_share"> share</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
-
+    <string name="button_fromImage">Scan Link!</string>
+    <string name="scanning_link">Scanning your snap...</string>
+    <string name="subscription_key">c3045087ed7342bc84634a0bc16c58b0</string>
+    <string name="api_endpoint">https://westcentralus.api.cognitive.microsoft.com/vision/v1.0/ocr</string>
 </resources>

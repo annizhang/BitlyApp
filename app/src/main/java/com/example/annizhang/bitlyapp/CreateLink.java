@@ -4,14 +4,18 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -32,31 +36,59 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
 import static com.example.annizhang.bitlyapp.R.id.parent;
 
 
-public class CreateLink extends AppCompatActivity {
+public class CreateLink extends AppCompatActivity{
 
     public static String ACCESSCODE = "user access code after log in";
     public static final String allLinks = "all the links from link_history";
     public ArrayList<MyLink> linkHistory;
     //public Intent linksIntent;
     ListView linksList;
+    TextView mTextView;
+    String title;
+    Button createEventButton;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_link);
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        Button myTextView = (Button) findViewById(R.id.getFromImage);
+        myTextView.setTypeface(typeface);
+        EditText myTextView1 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        EditText myTextView3 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        Button myTextView4 = (Button) findViewById(R.id.button_makelink);
+        myTextView.setTypeface(typeface);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.drawable.ic_action_b_logo_2000);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
+
+
+
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
+        String scannedLink = intent.getStringExtra("scanned_link");
+        if (scannedLink != null && scannedLink != ""){
+            EditText editLink = (EditText) findViewById(R.id.editLink);
+            editLink.setText(scannedLink);
+        }
+
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
+        System.out.println("ACCESSCODE IS: " + ACCESSCODE);
+
         linksList = (ListView) findViewById(R.id.listView);
 
         TabHost thisTab = (TabHost) findViewById(R.id.tabhost);
@@ -79,8 +111,6 @@ public class CreateLink extends AppCompatActivity {
 
         thisTab.setup();
 
-
-
         TabHost.TabSpec createTab = thisTab.newTabSpec("create");
         createTab.setContent(R.id.create_link);
         createTab.setIndicator("Create Link");
@@ -96,9 +126,6 @@ public class CreateLink extends AppCompatActivity {
         statsTab.setIndicator("My Stats");
         thisTab.addTab(statsTab);
 
-
-
-
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
@@ -106,35 +133,49 @@ public class CreateLink extends AppCompatActivity {
             }
         });
 
-        Button copyButton = (Button) findViewById(R.id.button_copy);
-        copyButton.setOnClickListener(new Button.OnClickListener() {
+        createEventButton = (Button) findViewById(R.id.button_addevent);
+        final Intent calendarIntent = new Intent(this, AddToCalendar.class);
+        createEventButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                final TextView shortLink = (TextView) findViewById(R.id.resultLink);
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("new link", shortLink.getText());
-                clipboard.setPrimaryClip(clip);
-                //show copied to clipboard message
-                Toast.makeText(getApplicationContext(), "link copied to clipboard!",Toast.LENGTH_SHORT).show();
+                System.out.println("Pressed calendar button");
+                System.out.println("BITLINK IS: " + mTextView.getText().toString());
+
+                Bundle bundle = new Bundle();
+                bundle.putString("bitlink", mTextView.getText().toString());
+                bundle.putString("title", title);
+                calendarIntent.putExtras(bundle);
+
+                startActivity(calendarIntent);
             }
         });
 
+        Button scanLinkButton = (Button) findViewById(R.id.getFromImage);
+        final Intent cameraIntent = new Intent(this, ScanLink.class);
+        scanLinkButton.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+            startActivity(cameraIntent);
+            }
+        });
     }
 
     public void shortenLink(View view){
         //call the bitly edit link endpoint to create a shorter bitly link
         EditText editLink = (EditText) findViewById(R.id.editLink);
 
-        String longLink = editLink.getText().toString();
-
+        final String longLink = editLink.getText().toString();
 
         EditText linkTitle = (EditText) findViewById(R.id.linkTitle);
-        String title = linkTitle.getText().toString();
+        title = linkTitle.getText().toString();
+
+        System.out.println("TITLE BEFORE EXTRACTOR IS: " + title);
+
         EditText linkNote = (EditText) findViewById(R.id.linkNote);
         String note = linkNote.getText().toString();
-        final TextView mTextView = (TextView) findViewById(R.id.resultLink);
+        mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
+        System.out.println("CreateLink accesscode: " + Constants.ACCESSCODE);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + Constants.ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
                 "&note" + note;
 
         // Request a string response from the provided URL.
@@ -145,10 +186,11 @@ public class CreateLink extends AppCompatActivity {
                         // Display the first 500 characters of the response string.
                         JSONObject newUrl;
                         try {
+                            System.out.println("response: " + response);
                             newUrl = new JSONObject(response);
+
                             mTextView.setText(newUrl.getJSONObject("data").getJSONObject("link_save").getString("link"));
-                            Button copyButton = (Button) findViewById(R.id.button_copy);
-                            copyButton.setVisibility(View.VISIBLE);
+                            createEventButton.setVisibility(View.VISIBLE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -159,13 +201,47 @@ public class CreateLink extends AppCompatActivity {
                 mTextView.setText("That didn't work!");
             }
         });
+
+        // addTextChangedListener
+        mTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if(title.matches("")) {
+                    System.out.println("TRYING TO GET TITLE");
+                    // start thread
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+
+                                title = TitleExtractor.getPageTitle(longLink);
+                                System.out.println("TITLE IN EXTRACTOR IS: " + title);
+                            }
+                            catch(IOException e) {
+                                System.out.println("Error getting title: " + e);
+                            }
+                            // end thread
+                        }
+                    });
+                    thread.start();
+                }
+                // end listener
+            }
+        });
+
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
 
     public void getLinks() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -202,7 +278,7 @@ public class CreateLink extends AppCompatActivity {
 
     public void getStats() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
