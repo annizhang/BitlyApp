@@ -64,6 +64,7 @@ public class MainActivity extends AppCompatActivity {
                             String accessCode = response;
                             System.out.println("accesscode is " + accessCode);
                             Constants.ACCESSCODE = accessCode;
+                            System.out.println("Constants.ACCESSCODE is " + Constants.ACCESSCODE);
                             intent.putExtra(ACCESSCODE, accessCode);
                             startActivity(intent);
                         }

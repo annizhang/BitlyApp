@@ -27,10 +27,10 @@ public class AddToCalendar extends Activity {
         super.onCreate(savedInstanceState);
         title = "Test title";
         try {
-            //String bitlink = savedInstanceState.getString("bitlink");
             Bundle bundle = getIntent().getExtras();
             String bitlink = bundle.getString("bitlink");
-            
+            title = bundle.getString("title");
+
             description = "Click here for event details: " + bitlink;
         } catch (NullPointerException e){
             description = "";
