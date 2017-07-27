@@ -87,23 +87,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
-/**
- * Created by heather on 7/24/17.
- * Endpoint: https://westcentralus.api.cognitive.microsoft.com/vision/v1.0
- *
- *  Key 1: c3045087ed7342bc84634a0bc16c58b0
- *
- *  Key 2: 62a432825d2a4826aef8fb401e067b67
- *
- *  MS Azure API Input requirements:
- Supported image formats: JPEG, PNG, GIF, BMP.
- Image file size must be less than 4MB.
- Image dimensions must be between 40 x 40 and
- 3200 x 3200 pixels, and the image cannot be
- larger than 10 megapixels.
- */
-
-
 
 /** ScanLink uses the device's camera app to take a picture,
     then that picture is saved to a file. The file is sent to
@@ -160,7 +143,7 @@ public class ScanLink extends Activity {
                 public void run() {
                     try  {
                         possible_url = getTextFromImage(imageFile.getName());
-                        if(possible_url != "") {
+                        if(possible_url != "" && !possible_url.contains("http://")) {
                             scanned_link = "http://" + possible_url.toLowerCase();
                         }else {
                             scanned_link = "whoops, no url found in image";
