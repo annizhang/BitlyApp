@@ -29,12 +29,15 @@ public class TitleExtractor {
      * @throws IOException
      */
     public static String getPageTitle(String url) throws IOException {
+        if(url == null) {
+            return null;
+        }
         URL u = new URL(url);
         URLConnection conn = u.openConnection();
 
         // ContentType is an inner class defined below
         ContentType contentType = getContentTypeHeader(conn);
-        if (!contentType.contentType.equals("text/html"))
+        if (contentType != null && !contentType.contentType.equals("text/html"))
             return null; // don't continue if not HTML
         else {
             // determine the charset, or use the default
@@ -105,7 +108,7 @@ public class TitleExtractor {
     private static final class ContentType {
         private final Pattern CHARSET_HEADER = Pattern.compile("charset=([-_a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE|Pattern.DOTALL);
 
-        private String contentType;
+        private String contentType = "";
         private String charsetName;
         private ContentType(String headerValue) {
             if (headerValue == null)

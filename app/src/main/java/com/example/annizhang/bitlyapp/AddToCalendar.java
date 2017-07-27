@@ -44,12 +44,18 @@ public class AddToCalendar extends Activity {
         }
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        final Intent createLink = new Intent(this, CreateLink.class);
+        startActivity(createLink);
+    }
+
     public void dispatchCreateEventIntent() {
         Intent createEventIntent = new Intent(Intent.ACTION_INSERT)
                 .setData(CalendarContract.Events.CONTENT_URI)
                 .putExtra(CalendarContract.Events.TITLE, title)
                 .putExtra(CalendarContract.Events.DESCRIPTION, description);
-        startActivity(createEventIntent);
+        startActivityForResult(createEventIntent, 1);
     }
 
 }
