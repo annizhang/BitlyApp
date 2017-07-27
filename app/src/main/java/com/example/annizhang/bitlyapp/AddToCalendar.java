@@ -17,7 +17,6 @@ import java.io.IOException;
 
 @TargetApi(Build.VERSION_CODES.N)
 public class AddToCalendar extends Activity {
-    // TODO: Need to get link to pass into description; could possibly populate title & date as well
     String title;
     String description;
     Context ctx;

@@ -47,7 +47,6 @@ import static com.example.annizhang.bitlyapp.R.id.parent;
 public class CreateLink extends AppCompatActivity{
 
     public static String ACCESSCODE = "user access code after log in";
-    public static String ACCESSCODE1 = "user access code after log in";
     public static final String allLinks = "all the links from link_history";
     public ArrayList<MyLink> linkHistory;
     //public Intent linksIntent;
