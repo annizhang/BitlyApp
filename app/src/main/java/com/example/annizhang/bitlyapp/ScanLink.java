@@ -115,14 +115,7 @@ public class ScanLink extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_scan_progress);
-        ImageView p = (ImageView) findViewById(R.id.parrot);
-        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
-        TextView myTextView = (TextView) findViewById(R.id.progress_text);
-        myTextView.setTypeface(typeface);
-        Glide.with(this)
-                .load("https://railsgirlssummerofcode.org/img/blog/2016/l1ghtsab3r-partyparrot.gif")
-                .into(p);
+        setContentView(R.layout.activity_create_link);
         try {
             ctx = this.getApplicationContext();
             dispatchTakePictureIntent();
@@ -256,11 +249,10 @@ public class ScanLink extends Activity {
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
 
-//        String aws_file_name = Constants.BUCKET_LOCATION + fileName;
-//
-//
-//        String json = String.format("{\"url\":\"%s\"}", aws_file_name);
-        String json = String.format("{'url':'%s'}","http://www.savebay.org/file/ICC-POSTER-WHALE-with-URL.compressed-page-001.jpg");
+        String aws_file_name = Constants.BUCKET_LOCATION + fileName;
+
+
+        String json = String.format("{\"url\":\"%s\"}", aws_file_name);
 
         if(!isJSONValid(json)){
             System.out.println("JSON NOT VALID!");
@@ -381,6 +373,14 @@ public class ScanLink extends Activity {
     }
 
     public void dispatchTakePictureIntent() throws IOException{
+        setContentView(R.layout.activity_scan_progress);
+        ImageView p = (ImageView) findViewById(R.id.parrot);
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        TextView myTextView = (TextView) findViewById(R.id.progress_text);
+        myTextView.setTypeface(typeface);
+        Glide.with(this)
+                .load("https://railsgirlssummerofcode.org/img/blog/2016/l1ghtsab3r-partyparrot.gif")
+                .into(p);
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
             // Create the File where the photo should go
