@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
 import static com.example.annizhang.bitlyapp.R.id.parent;
 
 
@@ -54,6 +57,17 @@ public class CreateLink extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_link);
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        Button myTextView = (Button) findViewById(R.id.getFromImage);
+        myTextView.setTypeface(typeface);
+        EditText myTextView1 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        EditText myTextView3 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        Button myTextView4 = (Button) findViewById(R.id.button_makelink);
+        myTextView.setTypeface(typeface);
+
+
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();

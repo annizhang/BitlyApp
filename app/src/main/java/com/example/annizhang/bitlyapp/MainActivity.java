@@ -1,6 +1,7 @@
 package com.example.annizhang.bitlyapp;
 
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -20,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import android.util.Base64;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ACCESSCODE = "";
 
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        TextView myTextView = (TextView) findViewById(R.id.textView);
+        myTextView.setTypeface(typeface);
 
     }
 
