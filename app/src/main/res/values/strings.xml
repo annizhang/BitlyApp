@@ -6,7 +6,7 @@
     <string name="long_link">Long URL</string>
     <string name="link_title">Title</string>
     <string name="link_note">Link Note</string>
-    <string name="result"> Shorter Link</string>
+    <string name="result"> Bitlink</string>
     <string name="button_copy">copy</string>
     <string name="button_share"> share</string>
     <string name="username">Username</string>
