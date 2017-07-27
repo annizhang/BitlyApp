@@ -49,6 +49,7 @@ public class CreateLink extends AppCompatActivity{
     public ArrayList<MyLink> linkHistory;
     //public Intent linksIntent;
     ListView linksList;
+    TextView mTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -86,8 +87,6 @@ public class CreateLink extends AppCompatActivity{
 
         thisTab.setup();
 
-
-
         TabHost.TabSpec createTab = thisTab.newTabSpec("create");
         createTab.setContent(R.id.create_link);
         createTab.setIndicator("Create Link");
@@ -103,13 +102,25 @@ public class CreateLink extends AppCompatActivity{
         statsTab.setIndicator("My Stats");
         thisTab.addTab(statsTab);
 
-
-
-
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 shortenLink(v);
+            }
+        });
+
+        Button createEventButton = (Button) findViewById(R.id.button_addevent);
+        final Intent calendarIntent = new Intent(this, AddToCalendar.class);
+        createEventButton.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                System.out.println("Pressed calendar button");
+                System.out.println("BITLINK IS: " + mTextView.getText().toString());
+
+                Bundle bundle = new Bundle();
+                bundle.putString("bitlink", mTextView.getText().toString());
+                calendarIntent.putExtras(bundle);
+
+                startActivity(calendarIntent);
             }
         });
 
@@ -133,7 +144,7 @@ public class CreateLink extends AppCompatActivity{
         String title = linkTitle.getText().toString();
         EditText linkNote = (EditText) findViewById(R.id.linkNote);
         String note = linkNote.getText().toString();
-        final TextView mTextView = (TextView) findViewById(R.id.resultLink);
+        mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
         System.out.println("CreateLink accesscode: " + ACCESSCODE);

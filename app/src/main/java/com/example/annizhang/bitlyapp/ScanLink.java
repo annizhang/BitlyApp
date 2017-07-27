@@ -108,7 +108,7 @@ import org.json.JSONStringer;
 /** ScanLink uses the device's camera app to take a picture,
     then that picture is saved to a file. The file is sent to
  MS Azure to parse the image for text. That text is then returned
- and parsed to get the URL (and date for calendar). */
+ and parsed to get the URL. */
 @TargetApi(Build.VERSION_CODES.N)
 public class ScanLink extends Activity {
     private String imageText; //
