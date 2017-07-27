@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.net.wifi.WifiConfiguration;
 import android.os.Build;
@@ -29,6 +30,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
@@ -93,6 +95,8 @@ import org.json.JSONStringer;
 import com.bumptech.glide.annotation.GlideModule;
 import com.bumptech.glide.module.AppGlideModule;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
+
 /**
  * Created by heather on 7/24/17.
  * Endpoint: https://westcentralus.api.cognitive.microsoft.com/vision/v1.0
@@ -133,6 +137,9 @@ public class ScanLink extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan_progress);
         ImageView p = (ImageView) findViewById(R.id.parrot);
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        TextView myTextView = (TextView) findViewById(R.id.progress_text);
+        myTextView.setTypeface(typeface);
         Glide.with(this)
                 .load("https://railsgirlssummerofcode.org/img/blog/2016/l1ghtsab3r-partyparrot.gif")
                 .into(p);
