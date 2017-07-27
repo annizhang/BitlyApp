@@ -20,12 +20,15 @@ import android.support.v4.content.FileProvider;
 import android.util.Base64;
 
 import com.amazonaws.mobileconnectors.s3.transferutility.TransferState;
+import com.bumptech.glide.Glide;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import android.util.Log;
 import android.util.StringBuilderPrinter;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.amazonaws.auth.CognitoCachingCredentialsProvider;
@@ -87,6 +90,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
+import com.bumptech.glide.annotation.GlideModule;
+import com.bumptech.glide.module.AppGlideModule;
+
 /**
  * Created by heather on 7/24/17.
  * Endpoint: https://westcentralus.api.cognitive.microsoft.com/vision/v1.0
@@ -125,6 +131,11 @@ public class ScanLink extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_scan_progress);
+        ImageView p = (ImageView) findViewById(R.id.parrot);
+        Glide.with(this)
+                .load("https://railsgirlssummerofcode.org/img/blog/2016/l1ghtsab3r-partyparrot.gif")
+                .into(p);
         try {
             ctx = this.getApplicationContext();
             dispatchTakePictureIntent();
@@ -254,10 +265,11 @@ public class ScanLink extends Activity {
         final String url_parameters = "?language=unk&detectOrientation=true";
         final String url = api_endpoint + url_parameters;
 
-        String aws_file_name = Constants.BUCKET_LOCATION + fileName;
-
-
-        String json = String.format("{\"url\":\"%s\"}", aws_file_name);
+//        String aws_file_name = Constants.BUCKET_LOCATION + fileName;
+//
+//
+//        String json = String.format("{\"url\":\"%s\"}", aws_file_name);
+        String json = String.format("{'url':'%s'}","http://www.savebay.org/file/ICC-POSTER-WHALE-with-URL.compressed-page-001.jpg");
 
         if(!isJSONValid(json)){
             System.out.println("JSON NOT VALID!");
@@ -278,6 +290,8 @@ public class ScanLink extends Activity {
             connection.setAllowUserInteraction(false);
 
             if (json != null) {
+                //start spinning
+
                 //set the content length of the body
                 connection.setDoInput(true);
                 connection.setDoOutput(true);
