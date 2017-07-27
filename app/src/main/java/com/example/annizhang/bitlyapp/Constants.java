@@ -27,3 +27,4 @@ public class Constants {
             "(#([-\\w~!$+|.,*:=]|%[a-f\\d]{2})*)?\\b";
 
 }
+
