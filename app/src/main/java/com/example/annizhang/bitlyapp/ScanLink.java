@@ -143,8 +143,12 @@ public class ScanLink extends Activity {
                 public void run() {
                     try  {
                         possible_url = getTextFromImage(imageFile.getName());
-                        if(possible_url != "" && !possible_url.contains("http://")) {
-                            scanned_link = "http://" + possible_url.toLowerCase();
+                        if(possible_url != "") {
+                            if(!possible_url.contains("http://") && !possible_url.contains("https://")) {
+                                scanned_link = "http://" + possible_url.toLowerCase();
+                            } else {
+                                scanned_link = possible_url;
+                            }
                         }else {
                             scanned_link = "whoops, no url found in image";
                         }
@@ -292,6 +296,7 @@ public class ScanLink extends Activity {
                                 while(reader.hasNext()){
                                     final MSRegion region = gson.fromJson(reader, MSRegion.class);
                                     String foundLink = searchForLink(region);
+                                    Log.i("Found Link", "Link is: " + foundLink);
                                     if (foundLink != ""){
                                         return foundLink;
                                     }
@@ -342,7 +347,7 @@ public class ScanLink extends Activity {
                     System.out.println("FOUND VALUE IN REGEX CHECK: " + m.group(0));
                     return text;
                 }else if (text.contains("www") || text.contains(".com") || text.contains("http") || text.contains("https")) {
-                    System.out.println("FOUND LINK IN NAIVE CHECK!");
+                    System.out.println("FOUND LINK IN NAIVE CHECK! " + text);
                     return text;
                 }
             }
