@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Base64;
@@ -12,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TabHost;
 import android.widget.TextView;
@@ -32,16 +34,18 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.annizhang.bitlyapp.Constants.DEFAULT_FONT;
 import static com.example.annizhang.bitlyapp.R.id.parent;
 
 
-public class CreateLink extends AppCompatActivity {
+public class CreateLink extends AppCompatActivity{
 
     public static String ACCESSCODE = "user access code after log in";
     public static final String allLinks = "all the links from link_history";
@@ -50,12 +54,29 @@ public class CreateLink extends AppCompatActivity {
     ListView linksList;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_link);
+        Typeface typeface = Typeface.createFromAsset(this.getAssets(), DEFAULT_FONT);
+        Button myTextView = (Button) findViewById(R.id.getFromImage);
+        myTextView.setTypeface(typeface);
+        EditText myTextView1 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        EditText myTextView3 = (EditText) findViewById(R.id.editText);
+        myTextView.setTypeface(typeface);
+        Button myTextView4 = (Button) findViewById(R.id.button_makelink);
+        myTextView.setTypeface(typeface);
+
+
 
         // Get the Intent that started this activity and extract the string
         Intent intent = getIntent();
+        String scannedLink = intent.getStringExtra("scanned_link");
+        if (scannedLink != null && scannedLink != ""){
+            EditText editLink = (EditText) findViewById(R.id.editLink);
+            editLink.setText(scannedLink);
+        }
+
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
         linksList = (ListView) findViewById(R.id.listView);
 
@@ -106,18 +127,13 @@ public class CreateLink extends AppCompatActivity {
             }
         });
 
-        Button copyButton = (Button) findViewById(R.id.button_copy);
-        copyButton.setOnClickListener(new Button.OnClickListener() {
+        Button scanLinkButton = (Button) findViewById(R.id.getFromImage);
+        final Intent cameraIntent = new Intent(this, ScanLink.class);
+        scanLinkButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
-                final TextView shortLink = (TextView) findViewById(R.id.resultLink);
-                ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("new link", shortLink.getText());
-                clipboard.setPrimaryClip(clip);
-                //show copied to clipboard message
-                Toast.makeText(getApplicationContext(), "link copied to clipboard!",Toast.LENGTH_SHORT).show();
+            startActivity(cameraIntent);
             }
         });
-
     }
 
     public void shortenLink(View view){
@@ -134,7 +150,8 @@ public class CreateLink extends AppCompatActivity {
         final TextView mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
+        System.out.println("CreateLink accesscode: " + ACCESSCODE);
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + Constants.ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
                 "&note" + note;
 
         // Request a string response from the provided URL.
@@ -145,10 +162,10 @@ public class CreateLink extends AppCompatActivity {
                         // Display the first 500 characters of the response string.
                         JSONObject newUrl;
                         try {
+                            System.out.println("response: " + response);
                             newUrl = new JSONObject(response);
+
                             mTextView.setText(newUrl.getJSONObject("data").getJSONObject("link_save").getString("link"));
-                            Button copyButton = (Button) findViewById(R.id.button_copy);
-                            copyButton.setVisibility(View.VISIBLE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -165,7 +182,7 @@ public class CreateLink extends AppCompatActivity {
 
     public void getLinks() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/link_history?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -202,7 +219,7 @@ public class CreateLink extends AppCompatActivity {
 
     public void getStats() {
         RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + ACCESSCODE;
+        String url = "https://api-ssl.bitly.com" + "/v3/user/clicks?access_token=" + Constants.ACCESSCODE;
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
