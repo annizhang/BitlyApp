@@ -87,28 +87,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONStringer;
 
-/**
- * Created by heather on 7/24/17.
- * Endpoint: https://westcentralus.api.cognitive.microsoft.com/vision/v1.0
- *
- *  Key 1: c3045087ed7342bc84634a0bc16c58b0
- *
- *  Key 2: 62a432825d2a4826aef8fb401e067b67
- *
- *  MS Azure API Input requirements:
- Supported image formats: JPEG, PNG, GIF, BMP.
- Image file size must be less than 4MB.
- Image dimensions must be between 40 x 40 and
- 3200 x 3200 pixels, and the image cannot be
- larger than 10 megapixels.
- */
-
-
 
 /** ScanLink uses the device's camera app to take a picture,
     then that picture is saved to a file. The file is sent to
  MS Azure to parse the image for text. That text is then returned
- and parsed to get the URL (and date for calendar). */
+ and parsed to get the URL. */
 @TargetApi(Build.VERSION_CODES.N)
 public class ScanLink extends Activity {
     private String imageText; //
@@ -161,7 +144,11 @@ public class ScanLink extends Activity {
                     try  {
                         possible_url = getTextFromImage(imageFile.getName());
                         if(possible_url != "") {
-                            scanned_link = "http://" + possible_url.toLowerCase();
+                            if(!possible_url.contains("http://") && !possible_url.contains("https://")) {
+                                scanned_link = "http://" + possible_url.toLowerCase();
+                            } else {
+                                scanned_link = possible_url;
+                            }
                         }else {
                             scanned_link = "whoops, no url found in image";
                         }
@@ -309,6 +296,7 @@ public class ScanLink extends Activity {
                                 while(reader.hasNext()){
                                     final MSRegion region = gson.fromJson(reader, MSRegion.class);
                                     String foundLink = searchForLink(region);
+                                    Log.i("Found Link", "Link is: " + foundLink);
                                     if (foundLink != ""){
                                         return foundLink;
                                     }
@@ -359,7 +347,7 @@ public class ScanLink extends Activity {
                     System.out.println("FOUND VALUE IN REGEX CHECK: " + m.group(0));
                     return text;
                 }else if (text.contains("www") || text.contains(".com") || text.contains("http") || text.contains("https")) {
-                    System.out.println("FOUND LINK IN NAIVE CHECK!");
+                    System.out.println("FOUND LINK IN NAIVE CHECK! " + text);
                     return text;
                 }
             }

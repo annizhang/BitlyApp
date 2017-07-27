@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.graphics.Typeface;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Base64;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,6 +54,9 @@ public class CreateLink extends AppCompatActivity{
     public ArrayList<MyLink> linkHistory;
     //public Intent linksIntent;
     ListView linksList;
+    TextView mTextView;
+    String title;
+    Button createEventButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
@@ -82,6 +87,8 @@ public class CreateLink extends AppCompatActivity{
         }
 
         ACCESSCODE = intent.getStringExtra(MainActivity.ACCESSCODE);
+        System.out.println("ACCESSCODE IS: " + ACCESSCODE);
+
         linksList = (ListView) findViewById(R.id.listView);
 
         TabHost thisTab = (TabHost) findViewById(R.id.tabhost);
@@ -104,8 +111,6 @@ public class CreateLink extends AppCompatActivity{
 
         thisTab.setup();
 
-
-
         TabHost.TabSpec createTab = thisTab.newTabSpec("create");
         createTab.setContent(R.id.create_link);
         createTab.setIndicator("Create Link");
@@ -121,13 +126,26 @@ public class CreateLink extends AppCompatActivity{
         statsTab.setIndicator("My Stats");
         thisTab.addTab(statsTab);
 
-
-
-
         Button shortenButton = (Button) findViewById(R.id.button_makelink);
         shortenButton.setOnClickListener(new Button.OnClickListener() {
             public void onClick(View v) {
                 shortenLink(v);
+            }
+        });
+
+        createEventButton = (Button) findViewById(R.id.button_addevent);
+        final Intent calendarIntent = new Intent(this, AddToCalendar.class);
+        createEventButton.setOnClickListener(new Button.OnClickListener() {
+            public void onClick(View v) {
+                System.out.println("Pressed calendar button");
+                System.out.println("BITLINK IS: " + mTextView.getText().toString());
+
+                Bundle bundle = new Bundle();
+                bundle.putString("bitlink", mTextView.getText().toString());
+                bundle.putString("title", title);
+                calendarIntent.putExtras(bundle);
+
+                startActivity(calendarIntent);
             }
         });
 
@@ -144,17 +162,19 @@ public class CreateLink extends AppCompatActivity{
         //call the bitly edit link endpoint to create a shorter bitly link
         EditText editLink = (EditText) findViewById(R.id.editLink);
 
-        String longLink = editLink.getText().toString();
-
+        final String longLink = editLink.getText().toString();
 
         EditText linkTitle = (EditText) findViewById(R.id.linkTitle);
-        String title = linkTitle.getText().toString();
+        title = linkTitle.getText().toString();
+
+        System.out.println("TITLE BEFORE EXTRACTOR IS: " + title);
+
         EditText linkNote = (EditText) findViewById(R.id.linkNote);
         String note = linkNote.getText().toString();
-        final TextView mTextView = (TextView) findViewById(R.id.resultLink);
+        mTextView = (TextView) findViewById(R.id.resultLink);
 
         RequestQueue queue = Volley.newRequestQueue(this);
-        System.out.println("CreateLink accesscode: " + ACCESSCODE);
+        System.out.println("CreateLink accesscode: " + Constants.ACCESSCODE);
         String url = "https://api-ssl.bitly.com" + "/v3/user/link_save?access_token=" + Constants.ACCESSCODE + "&longUrl=" + longLink + "&title=" + title +
                 "&note" + note;
 
@@ -170,6 +190,7 @@ public class CreateLink extends AppCompatActivity{
                             newUrl = new JSONObject(response);
 
                             mTextView.setText(newUrl.getJSONObject("data").getJSONObject("link_save").getString("link"));
+                            createEventButton.setVisibility(View.VISIBLE);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -180,6 +201,40 @@ public class CreateLink extends AppCompatActivity{
                 mTextView.setText("That didn't work!");
             }
         });
+
+        // addTextChangedListener
+        mTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if(title.matches("")) {
+                    System.out.println("TRYING TO GET TITLE");
+                    // start thread
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+
+                                title = TitleExtractor.getPageTitle(longLink);
+                                System.out.println("TITLE IN EXTRACTOR IS: " + title);
+                            }
+                            catch(IOException e) {
+                                System.out.println("Error getting title: " + e);
+                            }
+                            // end thread
+                        }
+                    });
+                    thread.start();
+                }
+                // end listener
+            }
+        });
+
         // Add the request to the RequestQueue.
         queue.add(stringRequest);
     }
