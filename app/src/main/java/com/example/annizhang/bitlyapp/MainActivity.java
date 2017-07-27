@@ -38,6 +38,10 @@ public class MainActivity extends AppCompatActivity {
         TextView myTextView = (TextView) findViewById(R.id.textView);
         myTextView.setTypeface(typeface);
 
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.drawable.ic_action_b_logo_2000);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
+
     }
 
     public void login(View view) {

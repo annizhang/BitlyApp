@@ -66,6 +66,10 @@ public class CreateLink extends AppCompatActivity{
         myTextView.setTypeface(typeface);
         Button myTextView4 = (Button) findViewById(R.id.button_makelink);
         myTextView.setTypeface(typeface);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setLogo(R.drawable.ic_action_b_logo_2000);
+        getSupportActionBar().setDisplayUseLogoEnabled(true);
+
 
 
 
